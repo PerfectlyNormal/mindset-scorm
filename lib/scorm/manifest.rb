@@ -5,13 +5,13 @@ require 'scorm/resource'
 
 module Scorm
   class Manifest
-    
+
     # Versions of the SCORM standard that is supported when running in
     # strict mode. When not running in strict mode, the library will not
     # care about the version specified in the package manifest and will
     # simply try its best to parse the information that it finds.
     SUPPORTED_VERSIONS = ['2004 3rd Edition', 'CAM 1.3', '1.2']
-    
+
     # List of XML and XML Schema files that are part of the manifest for
     # the package.
     MANIFEST_FILES = %w(imsmanifest.xml adlcp_rootv1p2.xsd ims_xml.xsd
@@ -23,7 +23,7 @@ module Scorm
     RESOURCES_BLACKLIST = [
       '__MACOSX', 'desktop.ini', 'Thumbs.db'
     ].concat(MANIFEST_FILES)
-    
+
     attr_accessor :identifier
     attr_accessor :metadata
     attr_accessor :organizations
@@ -32,18 +32,18 @@ module Scorm
     attr_accessor :base_url
     attr_accessor :schema
     attr_accessor :schema_version
-  
+
     def initialize(package, manifest_data)
       @xmldoc = REXML::Document.new(manifest_data)
-    
+
       @package = package
       @metadata = Scorm::Metadata.new
       @organizations = Hash.new
       @resources = Hash.new
-      
+
       # Manifest identifier
       @identifier = @xmldoc.root.attribute('identifier').to_s
-    
+
       # Read metadata
       if metadata_el = REXML::XPath.first(@xmldoc.root, '/manifest/metadata')
         # Read <schema> and <schemaversion>
@@ -51,13 +51,13 @@ module Scorm
         schemaversion_el = REXML::XPath.first(metadata_el, 'schemaversion')
         @schema = schema_el.text.to_s unless schema_el.nil?
         @schema_version = schemaversion_el.text.to_s unless schemaversion_el.nil?
-        
+
         if @package.options[:strict]
           if (@schema != 'ADL SCORM') || (!SUPPORTED_VERSIONS.include?(@schema_version))
             raise InvalidManifest, "Sorry, unsupported SCORM-version (#{schema_el.text.to_s} #{schemaversion_el.text.to_s}), try turning strict parsing off."
           end
         end
-      
+
         # Find a <lom> element...
         lom_el = nil
         if adlcp_location = REXML::XPath.first(metadata_el, 'adlcp:location')
@@ -73,13 +73,13 @@ module Scorm
           lom_el = REXML::XPath.first(metadata_el, 'lom') ||
                    REXML::XPath.first(metadata_el, 'lom:lom')
         end
-      
+
         # Read lom metadata
         if lom_el
           @metadata = Scorm::Metadata.from_xml(lom_el)
         end
       end
-    
+
       # Read organizations
       if organizations_el = REXML::XPath.first(@xmldoc.root, '/manifest/organizations')
         default_organization_id = organizations_el.attribute('default').to_s
@@ -93,13 +93,13 @@ module Scorm
       else
         raise InvalidManifest, 'Missing organizations element.'
       end
-    
+
       # Read resources
       REXML::XPath.each(@xmldoc.root, '/manifest/resources/resource') do |el|
         res = Scorm::Resource.from_xml(el)
         @resources[res.id] = res
       end
-      
+
       # Read additional resources as assets (this is a fix for packages that
       # don't correctly specify all resource dependencies in the manifest).
       @package.files.each do |file|
@@ -108,19 +108,19 @@ module Scorm
         next if File.basename(file) =~ /^\./
         next unless self.resources(:with_file => file).empty?
         next unless self.resources(:href => file).empty?
-        
+
         res = Scorm::Resource.new(file, 'webcontent', 'asset', file, nil, [file])
         @resources[file] = res
       end
-    
+
       # Read (optional) base url for resources
       resources_el = REXML::XPath.first(@xmldoc.root, '/manifest/resources')
       @base_url = (resources_el.attribute('xml:base') || '').to_s
-    
+
       # Read sub-manifests
       #REXML::XPath.
     end
-  
+
     def resources(options = nil)
       if (options.nil?) || (!options.is_a?(Hash))
         @resources.values
@@ -144,7 +144,7 @@ module Scorm
         subset
       end
     end
-    
+
     def sco(item, attribute = nil)
       resource = self.resources(:id => item.resource_id).first
       resource = (resource && resource.scorm_type == 'sco') ? resource : nil
