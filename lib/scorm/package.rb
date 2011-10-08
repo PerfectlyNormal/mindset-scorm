@@ -33,8 +33,16 @@ module Scorm
     def self.open(filename, options = {}, &block)
       Package.new(filename, options, &block)
     end
-    
-    # This method will load a SCORM package and extract its content to the 
+
+    def self.create(filename, source)
+      package = Scorm::Package.open(source) do |pkg|
+        pkg.pack! filename
+      end
+
+      package
+    end
+
+    # This method will load a SCORM package and extract its content to the
     # directory specified by the +:repository+ option. The manifest file will be
     # parsed and made available through the +manifest+ instance variable. This
     # method should be called with an associated block as it yields the opened
@@ -138,7 +146,19 @@ module Scorm
         entry.extract(entry_path)
       end
     end
-    
+
+    def pack!(filename)
+      Zip::ZipFile.open(filename, Zip::ZipFile::CREATE) do |zipfile|
+        Scorm::Manifest::MANIFEST_FILES.each do |filename|
+          zipfile.get_output_stream(filename) { |f| f.write file(filename) }
+        end
+        files = manifest.resources.map { |r| r.files }.flatten.uniq
+        files.each do |filename|
+          zipfile.get_output_stream(filename) { |f| f.write file(filename) }
+        end
+      end
+    end
+
     # This will only return +true+ if what was opened was an actual zip file.
     # It returns +false+ if what was opened was a filesystem directory.
     def package?
