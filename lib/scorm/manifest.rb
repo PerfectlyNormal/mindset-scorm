@@ -10,13 +10,29 @@ module Scorm
     # strict mode. When not running in strict mode, the library will not
     # care about the version specified in the package manifest and will
     # simply try its best to parse the information that it finds.
-    SUPPORTED_VERSIONS = ['2004 3rd Edition', 'CAM 1.3', '1.2']
+    SUPPORTED_VERSIONS = ['2004 4rd Edition', 'CAM 1.3', '1.2']
 
     # List of XML and XML Schema files that are part of the manifest for
     # the package.
-    MANIFEST_FILES = %w(imsmanifest.xml adlcp_rootv1p2.xsd ims_xml.xsd
-       imscp_rootv1p1p2.xsd imsmd_rootv1p2p1.xsd)
-    
+    MANIFEST_FILES = ["adlcp_v1p3.xsd",
+    "adlnav_v1p3.xsd",
+    "adlseq_v1p3.xsd",
+    "ims_xml.xsd",
+    "imscp_rootv1p1p2.xsd",
+    "imscp_v1p1.xsd",
+    "imsmd_rootv1p2p1.xsd",
+    "imsss_v1p0.xsd",
+    "imsss_v1p0auxresource.xsd",
+    "imsss_v1p0control.xsd",
+    "imsss_v1p0delivery.xsd",
+    "imsss_v1p0limit.xsd",
+    "imsss_v1p0objective.xsd",
+    "imsss_v1p0random.xsd",
+    "imsss_v1p0rollup.xsd",
+    "imsss_v1p0seqrule.xsd",
+    "imsss_v1p0util.xsd",
+    "xml.xsd"]
+
     # Files that might be present in a package, but that should not be
     # interprested as resources. All files starting with a "." (i.e. hidden
     # files) is also implicitly included in this list.
