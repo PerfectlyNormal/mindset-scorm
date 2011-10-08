@@ -8,7 +8,7 @@ require 'scorm/manifest'
 module Scorm
   class InvalidPackage < RuntimeError; end
   class InvalidManifest < InvalidPackage; end
-  
+
   class Package
     attr_accessor :name       # Name of the package.
     attr_accessor :manifest   # An instance of +Scorm::Manifest+.
@@ -16,20 +16,20 @@ module Scorm
     attr_accessor :repository # The directory to which the packages is extracted.
     attr_accessor :options    # The options hash supplied when opening the package.
     attr_accessor :package    # The file name of the package file.
-    
-    DEFAULT_LOAD_OPTIONS = { 
+
+    DEFAULT_LOAD_OPTIONS = {
       :strict => false,
-      :dry_run => false, 
+      :dry_run => false,
       :cleanup => true,
       :force_cleanup => false,
       :name => nil,
       :repository => nil
     }
-    
+
     def self.set_default_load_options(options = {})
       DEFAULT_LOAD_OPTIONS.merge!(options)
     end
-    
+
     def self.open(filename, options = {}, &block)
       Package.new(filename, options, &block)
     end
@@ -53,15 +53,15 @@ module Scorm
     #   :+strict+:     If +false+ the manifest will be parsed in a nicer way. Default: +true+.
     #   :+dry_run+:    If +true+ nothing will be written to the file system. Default: +false+.
     #   :+cleanup+:    If +false+ no cleanup will take place if an error occur. Default: +true+.
-    #   :+name+:       The name to use when extracting the package to the 
-    #                  repository. Default: will use the filename of the package 
+    #   :+name+:       The name to use when extracting the package to the
+    #                  repository. Default: will use the filename of the package
     #                  (minus the .zip extension).
     #   :+repository+: Path to the course repository. Default: the same directory as the package.
     #
     def initialize(filename, options = {}, &block)
       @options = DEFAULT_LOAD_OPTIONS.merge(options)
       @package = filename.respond_to?(:path) ? filename.path : filename
-      
+
       # Check if package is a directory or a file.
       if File.directory?(@package)
         @name = File.basename(@package)
@@ -72,73 +72,71 @@ module Scorm
         begin
           # Decide on a name for the package.
           @name = [(@options[:name] || File.basename(@package, File.extname(@package))), i].flatten.join
-      
+
           # Set the path for the extracted package.
           @repository = @options[:repository] || File.dirname(@package)
           @path = File.expand_path(File.join(@repository, @name))
-        
-          # First try is nil, subsequent tries sets and increments the value with 
+
+          # First try is nil, subsequent tries sets and increments the value with
           # one starting at zero.
           i = (i || 0) + 1
 
         # Make sure the generated path is unique.
         end while File.exists?(@path)
       end
-      
+
       # Extract the package
       extract!
-                                                        
+
       # Detect and read imsmanifest.xml
       if exists?('imsmanifest.xml')
         @manifest = Manifest.new(self, file('imsmanifest.xml'))
       else
         raise InvalidPackage, "#{File.basename(@package)}: no imsmanifest.xml, maybe not SCORM compatible?"
       end
-      
+
       # Yield to the caller.
       yield(self)
-      
+
       # Make sure the package is closed when the caller has finished reading it.
       self.close
 
-    # If an exception occur the package is auto-magically closed and any 
+    # If an exception occur the package is auto-magically closed and any
     # residual data deleted in a clean way.
     rescue Exception => e
       self.close
       self.cleanup
       raise e
     end
-    
+
     # Closes the package.
     def close
       @zipfile.close if @zipfile
-      
+
       # Make sure the extracted package is deleted if force_cleanup_on_close
       # is enabled.
       self.cleanup if @options[:force_cleanup_on_close]
     end
-    
+
     # Cleans up by deleting all extracted files. Called when an error occurs.
     def cleanup
       FileUtils.rmtree(@path) if @options[:cleanup] && !@options[:dry_run] && @path && File.exists?(@path) && package?
     end
-    
+
     # Extracts the content of the package to the course repository. This will be
     # done automatically when opening a package so this method will rarely be
     # used. If the +dry_run+ option was set to +true+ when the package was
     # opened nothing will happen. This behavior can be overridden with the
-    # +force+ parameter. 
+    # +force+ parameter.
     def extract!(force = false)
       return if @options[:dry_run] && !force
-      
+
       # If opening an already extracted package; do nothing.
-      if not package?
-        return
-      end
-      
+      return unless package?
+
       # Create the path to the course
       FileUtils.mkdir_p(@path)
-      
+
       Zip::ZipFile::foreach(@package) do |entry|
         entry_path = File.join(@path, entry.name)
         entry_dir = File.dirname(entry_path)
@@ -165,7 +163,7 @@ module Scorm
       return false if File.directory?(@package)
       return true
     end
-    
+
     # Reads a file from the package. If the file is not extracted yet (all files
     # are extracted by default when opening the package) it will be extracted
     # to the file system and its content returned. If the +dry_run+ option was
@@ -180,7 +178,7 @@ module Scorm
         end
       end
     end
-    
+
     # Returns +true+ if the specified file (or directory) exists in the package.
     def exists?(filename)
       if File.exists?(@path)
@@ -192,9 +190,9 @@ module Scorm
         false
       end
     end
-    
+
     # Computes the absolute path to a file in an extracted package given its
-    # relative path. The argument +relative+ can be used to get the path 
+    # relative path. The argument +relative+ can be used to get the path
     # relative to the course repository.
     #
     # Ex.
@@ -210,7 +208,7 @@ module Scorm
         File.join(@path, relative_filename)
       end
     end
-    
+
     # Returns an array with the paths to all the files in the package.
     def files
       if File.directory?(@package)
