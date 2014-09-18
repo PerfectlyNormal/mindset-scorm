@@ -1,5 +1,5 @@
 require 'rubygems'
-require 'zip/zip'
+require 'zip'
 require 'fileutils'
 require 'open-uri'
 require 'scorm/datatypes'
@@ -137,7 +137,7 @@ module Scorm
       # Create the path to the course
       FileUtils.mkdir_p(@path)
 
-      Zip::ZipFile::foreach(@package) do |entry|
+      Zip::File::foreach(@package) do |entry|
         entry_path = File.join(@path, entry.name)
         entry_dir = File.dirname(entry_path)
         FileUtils.mkdir_p(entry_dir) unless File.exists?(entry_dir)
@@ -146,7 +146,7 @@ module Scorm
     end
 
     def pack!(filename)
-      Zip::ZipFile.open(filename, Zip::ZipFile::CREATE) do |zipfile|
+      Zip::File.open(filename, Zip::File::CREATE) do |zipfile|
         Scorm::Manifest::MANIFEST_FILES.each do |filename|
           zipfile.get_output_stream(filename) { |f| f.write file(filename) }
         end
@@ -173,7 +173,7 @@ module Scorm
       if File.exists?(@path)
         File.read(path_to(filename))
       else
-        Zip::ZipFile.foreach(@package) do |entry|
+        Zip::File.foreach(@package) do |entry|
           return entry.get_input_stream {|io| io.read } if entry.name == filename
         end
       end
@@ -184,7 +184,7 @@ module Scorm
       if File.exists?(@path)
         File.exists?(path_to(filename))
       else
-        Zip::ZipFile::foreach(@package) do |entry|
+        Zip::File::foreach(@package) do |entry|
           return true if entry.name == filename
         end
         false
@@ -216,7 +216,7 @@ module Scorm
           File.directory?(f) }.map {|f| f.sub(/^#{File.expand_path(@package)}\/?/, '') }
       else
         entries = []
-        Zip::ZipFile::foreach(@package) do |entry|
+        Zip::File::foreach(@package) do |entry|
           entries << entry.name unless entry.name[-1..-1] == '/'
         end
         entries

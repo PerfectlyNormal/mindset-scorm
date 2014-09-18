@@ -13,5 +13,5 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib"]
   s.default_executable = 'scorm'
 
-  s.add_dependency('rubyzip',  '~> 0.9.4')
+  s.add_dependency('rubyzip',  '~> 1.0.0')
 end
